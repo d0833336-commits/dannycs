@@ -191,36 +191,6 @@
 
 
 
-
-    <a href="/profile" style="display: inline-block; padding: 12px 24px; background-color: #66c0f4; color: #171a21; text-decoration: none; border-radius: 5px; font-weight: bold; margin-bottom: 40px;">
-        👉 Открыть мой профиль
-    </a>
-
-
-
-    <!-- Блок инвентаря -->
-    <div style="background-color: #171a21; max-width: 650px; margin: 0 auto; padding: 20px; border-radius: 10px; border: 1px solid #4f535b; text-align: left;"><h2 style="color: #66c0f4; margin-top: 0; border-bottom: 1px solid #4f535b; padding-bottom: 10px;">🎒 Твой инвентарь:</h2>
-
-        {% if inventory %}
-            <ul style="list-style-type: none; padding: 0; margin: 0;">
-            {% for item in inventory %}
-                <li style="padding: 10px; margin: 8px 0; background-color: #1b2838; border-radius: 5px; border-left: 5px solid #ffd700; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{{ item }}</span>
-                    <form action="/sell_from_inventory" method="POST" style="margin: 0;">
-                        <input type="hidden" name="item_index" value="{{ loop.index0 }}">
-                        <button type="submit" style="padding: 5px 10px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold;">
-                            💰 Продать
-                        </button>
-                    </form>
-                </li>
-            {% endfor %}
-            </ul>
-        {% else: %}
-            <p style="color: #8f98a0; font-style: italic;">Инвентарь пока пуст. Открой кейс и сохрани оружие!</p>
-        {% endif %}
-    </div>
-
-
     <script>
         const tape = document.getElementById('tape');
         const order = ["green", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black"];
