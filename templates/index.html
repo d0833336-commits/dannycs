@@ -118,6 +118,13 @@
 
     <!-- Кнопки управления -->
     <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 40px;">
+        <!-- Кнопка перехода в Профиль -->
+    <div style="margin: 20px auto; text-align: center;">
+        <a href="/profile" style="display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: white; text-decoration: none; font-size: 18px; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(79,70,229,0.5); font-family: sans-serif;">
+            🎒 Открыть профиль и инвентарь
+        </a>
+    </div>
+
         <form action="/open_case" method="POST" id="case-form">
             <button type="button" onclick="soundCase(); setTimeout(()=>document.getElementById('case-form').submit(), 150);" style="padding: 15px 35px; background-color: #a3cf06; color: #171a21; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer;">
                 📦 Открыть кейс (30 руб.)
