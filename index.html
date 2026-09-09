@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Danny CS Project</title>
+    <style>
+        .roulette-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 65px;
+            margin: 20px auto;
+            overflow: hidden;
+            border: 3px solid #4f535b;
+            border-radius: 8px;
+            background: #111;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .roulette-pointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: #ffd700;
+            z-index: 10;
+            box-shadow: 0 0 12px #ffd700;
+        }
+        .roulette-tape {
+            display: flex;
+            width: max-content;
+            height: 100%;
+            transition: transform 3.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+            transform: translateX(0px);
+        }
+        .roulette-card {
+            width: 55px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            border-right: 1px solid #111;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body style="background-color: #1b2838; font-family: sans-serif; text-align: center; color: white; padding-top: 50px;">
+
+    <!-- Звуковой синтезатор -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep(frequency, duration) {
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.value = frequency;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+        const soundCase = () => playBeep(600, 0.15);
+        const soundContract = () => playBeep(250, 0.4);
+        const soundUpgrade = () => playBeep(450, 0.3);
+        const soundWin = () => {
+            playBeep(523, 0.1); setTimeout(() => playBeep(659, 0.1), 100); setTimeout(() => playBeep(784, 0.3), 200);
+        };
+    </script>
+
+    <h1 style="color: #66c0f4;">⚔️ Добро пожаловать на сайт Danny CS Project! ⚔️</h1>
+    <p style="font-size: 18px; color: #c7d5e0;">Твой личный симулятор кейсов с полноценной экономикой.</p>
+
+
+
+    <!-- Блок баланса -->
+    <div style="background-color: #171a21; display: inline-block; padding: 15px 30px; border-radius: 8px; border: 1px solid #4f535b; margin-bottom: 20px;">
+        <span style="font-size: 22px; color: #a3cf06; font-weight: bold;">💰 Твой баланс: {{ balance }} руб.</span>
+    </div>
+
+    <!-- Кнопка пополнения баланса -->
+    <form action="/get_bonus" method="POST" style="display: inline-block; margin-left: 10px;">
+        <button type="submit" style="padding: 10px 20px; background-color: #2ecc71; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+            ➕ Получить +100 руб.
+        </button>
+    </form>
+
+
+
+    <!-- Зона выпадения дропа -->
+    <div style="background-color: #171a21; display: inline-block; padding: 25px 50px; border-radius: 10px; border: 2px dashed #66c0f4; min-width: 350px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; color: #8f98a0;">Последний дроп:</h3>
+        <p style="font-size: 18px; font-weight: bold; color: #ffd700; margin-bottom: 15px;">{{ drop }}</p>
+
+        {% if can_sell %}
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <form action="/sell_weapon" method="POST">
+                <button type="submit" style="padding: 8px 15px; background-color: #e67e22; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                    ⚖️ Продать дроп
+                </button>
+            </form>
+            <form action="/add_to_inventory" method="POST">
+                <button type="submit" style="padding: 8px 15px; background-color: #3498db; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                    📥 В инвентарь
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+
+
+    <!-- Кнопки управления -->
+    <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 40px;">
+        <!-- Кнопка перехода в Профиль -->
+    <div style="margin: 20px auto; text-align: center;">
+        <a href="/profile" style="display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: white; text-decoration: none; font-size: 18px; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(79,70,229,0.5); font-family: sans-serif;">
+            🎒 Открыть профиль и инвентарь
+        </a>
+    </div>
+
+        <form action="/open_case" method="POST" id="case-form">
+            <button type="button" onclick="soundCase(); setTimeout(()=>document.getElementById('case-form').submit(), 150);" style="padding: 15px 35px; background-color: #a3cf06; color: #171a21; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer;">
+                📦 Открыть кейс (30 руб.)
+            </button>
+        </form>
+
+        <form action="/run_contract" method="POST" id="contract-form">
+            <button type="button" onclick="soundContract(); setTimeout(()=>document.getElementById('contract-form').submit(), 150);" style="padding: 15px 35px; background-color: #e67e22; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer;">
+                ♻️ Запустить контракт (3 шт.)
+            </button>
+        </form>
+    </div>
+
+    <!-- --- БЛОК: АПГРЕЙД ОРУЖИЯ (UPGRADE) --- -->
+    <div style="background-color: #171a21; max-width: 650px; margin: 0 auto 40px auto; padding: 25px; border-radius: 10px; border: 1px solid #4f535b;">
+        <h2 style="color: #66c0f4; margin-top: 0;">📈 Апгрейд оружия (Upgrade)</h2>
+        <p style="font-size: 15px; color: #8f98a0; margin-bottom: 15px;">Апгрейдит <b>первую пушку</b> твоего инвентаря в цель на твой выбор!</p>
+
+        <div style="background-color: #1b2838; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+            <p style="font-size: 18px; font-weight: bold; color: #3498db; margin: 0;">{{ upgrade if upgrade else "Выбери желаемое оружие и попытай удачу!" }}</p>
+        </div>
+
+        <form action="/run_upgrade" method="POST" id="upgrade-form">
+            <label for="target-select" style="font-weight: bold; color: #c7d5e0; font-size: 16px;">Выбери цель апгрейда: </label>
+            <select name="target" id="target-select" style="padding: 10px; background-color: #1b2838; color: white; border: 1px solid #4f535b; border-radius: 5px; font-size: 15px; font-weight: bold; cursor: pointer;">
+                <option value="Glock-18 | Горелка Бунзена">Glock-18 | Горелка Бунзена (15 руб.)</option>
+                <option value="AK-47 | Затерянная земля">AK-47 | Затерянная земля (50 руб.)</option>
+                <option value="M4A4 | Безлюдный космос">M4A4 | Безлюдный космос (150 руб.)</option>
+                <option value="AWP | Азимов">AWP | Азимов (500 руб.)</option>
+                <option value="★ Нож! ★ Керамбит | Кровавая паутина">★ КЕРАМБИТ! ★ (5000 руб.)</option>
+            </select>
+
+
+            <button type="button" onclick="soundUpgrade(); setTimeout(()=>document.getElementById('upgrade-form').submit(), 200);" style="padding: 12px 30px; background-color: #9b59b6; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                ⚡ Запустить апгрейд!
+            </button>
+        </form>
+    </div>
+
+    <!-- --- КРУТОЙ АНИМИРОВАННЫЙ БЛОК: РУЛЕТКА --- -->
+    <div style="background-color: #171a21; max-width: 650px; margin: 0 auto 40px auto; padding: 20px; border-radius: 10px; border: 1px solid #4f535b;">
+        <h2 style="color: #66c0f4; margin-top: 0;">🎡 Рулетка Дабл (Ставка: 100 руб.)</h2>
+
+        <div class="roulette-wrapper">
+            <div class="roulette-pointer"></div>
+            <div class="roulette-tape" id="tape">
+                <!-- Лента чисел -->
+            </div>
+        </div>
+
+        <p id="roulette-status" style="font-size: 18px; font-weight: bold; color: #ffbc00;">
+            {{ roulette if roulette else "Выбери цвет ниже, чтобы сделать ставку!" }}
+        </p>
+
+        <form action="/run_roulette" method="POST" id="roulette-form">
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+                <button type="button" onclick="spinRoulette('red')" style="padding: 12px 25px; background-color: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">🔴 КРАСНОЕ (x2)</button>
+                <button type="button" onclick="spinRoulette('green')" style="padding: 12px 25px; background-color: #2ecc71; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">🟢 ЗЕЛЁНОЕ (x14)</button>
+                <button type="button" onclick="spinRoulette('black')" style="padding: 12px 25px; background-color: #2c3e50; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">⚫ ЧЁРНОЕ (x2)</button>
+            </div>
+            <input type="hidden" name="color" id="selected-color" value="red">
+        </form>
+    </div>
+
+
+    
+    <script>
+        const tape = document.getElementById('tape');
+        const order = ["green", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black"];
+
+        let tapeHTML = "";
+        for(let i = 0; i < 10; i++) {
+            order.forEach((color, num) => {
+                let bgColor = color === "red" ? "#e74c3c" : color === "black" ? "#2c3e50" : "#2ecc71";
+                tapeHTML += `<div class="roulette-card" style="background-color: ${bgColor};">${num}</div>`;
+            });
+        }
+        tape.innerHTML = tapeHTML;
+
+        const isRouletteAction = window.location.href.includes("run_roulette");
+        const serverResult = "{{ roulette }}";
+
+        if (isRouletteAction && serverResult && (serverResult.includes("ПОБЕДА") || serverResult.includes("Проигрыш"))) {
+            if (serverResult.includes("ПОБЕДА") || serverResult.includes("МЕГА-КУШ")) {
+                setTimeout(() => { soundWin(); }, 300);
+            }
+            setTimeout(() => {
+                let targetColor = "red";
+                if (serverResult.includes("ЗЕЛЁНОЕ")) targetColor = "green";
+                else if (serverResult.includes("BLACK")) targetColor = "black";
+
+                let cardWidth = 55;
+                let baseShift = cardWidth * 45;
+                if (targetColor === "green") baseShift += 0;
+                else if (targetColor === "red") baseShift += cardWidth * 1;
+                else if (targetColor === "black") baseShift += cardWidth * 2;
+
+                tape.style.transform = `translateX(-${baseShift - 220}px)`;
+            }, 100);
+        }
+
+        function spinRoulette(color) {
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            document.getElementById('selected-color').value = color;
+            document.getElementById('roulette-status').innerText = "🎰 Барабан запускается... Удачи!";
+            tape.style.transition = "transform 0.5s ease-in";
+            tape.style.transform = `translateX(-300px)`;
+            setTimeout(() => {
+                document.getElementById('roulette-form').submit();
+            }, 400);
+        }
+    </script>
+</body>
+</html>
