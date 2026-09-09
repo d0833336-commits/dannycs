@@ -16,6 +16,27 @@
         <p style="font-size: 20px; margin: 10px 0;">Любимое оружие: <strong style="color: #10b981; text-shadow: 0 0 8px rgba(16,185,129,0.4);">{{ weapon }}</strong></p>
     </div>
 
+<!-- Блок баланса -->
+        <p style="font-size: 24px; color: #28a745; margin: 15px 0; font-weight: bold; text-shadow: 0 0 10px rgba(40,167,69,0.5);">
+            💰 Текущий баланс: {{ balance }} руб.
+        </p>
+
+        <!-- Блок инвентаря -->
+        <div style="background-color: rgba(23, 28, 41, 0.7); display: inline-block; padding: 25px 45px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-top: 15px; width: 80%; max-width: 600px; text-align: left;">
+            <h3 style="color: #a5b4fc; margin-top: 0; text-align: center; font-size: 24px;">🎒 Твой инвентарь:</h3>
+
+            {% if inventory %}
+                <ul style="list-style-type: none; padding: 0; margin: 0;">
+                    {% for item in inventory %}
+                        <li style="background-color: rgba(255,255,255,0.05); margin: 8px 0; padding: 12px 15px; border-radius: 6px; color: #e2e8f0; font-size: 18px; border-left: 4px solid #4f46e5;">
+                            🔫 {{ item }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="color: #94a3b8; text-align: center; font-size: 18px; margin: 0;">Пока пусто. Открой пару кейсов на главной!</p>
+            {% endif %}
+        </div>
 
 
     <!-- Форма для изменения ника и пушки (тоже тёмная космическая) -->

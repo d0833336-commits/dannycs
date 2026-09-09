@@ -234,7 +234,7 @@ def profile():
     if request.method == 'POST':
         user_name = request.form.get('nickname')
         user_weapon = request.form.get('weapon')
-    return render_template('profile.html', name=user_name, weapon=user_weapon)
+    return render_template('profile.html', name=user_name, weapon=user_weapon,balance = user_balance, inventory=user_inventory)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT',500))
