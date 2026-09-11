@@ -67,14 +67,18 @@ def home():
 
 @app.route('/open_case', methods=['POST'])
 def open_case():
-    global user_balance, last_drop, can_sell
+    global user_balance, last_drop, can_sell,admin_cheat
     if user_balance >= 30:
         user_balance -= 30
         weapons = list(weapons_base_prices.keys())
-        drops = random.choices(weapons, weights=[50, 30, 13, 5, 1.8, 0.2])
-        base_name = drops[0]
-
-        wear = round(random.uniform(0.0, 1.0), 4)
+        # Хакерская подкрутка Дани
+        if admin_cheat == 1:
+            base_name = "★ Нож! ★ Керамбит | Кровавая паутина"
+            admin_cheat = 0  # Выключаем чит после одного открытия
+        else:
+            weapons = list(weapons_base_prices.keys())
+            drops = random.choices(weapons, weights=[50, 30, 13, 5, 1.8, 0.2])
+            base_name = drops[0]
         quality = get_quality_by_float(wear)
         final_price = int(weapons_base_prices[base_name] * quality_multipliers[quality])
 
@@ -239,3 +243,46 @@ def profile():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT',500))
     app.run(host='0.0.0.0', port=port)
+    # Переменная, чтобы один игрок не вводил промокод бесконечно
+    promo_used = 0
+
+
+    @app.route('/promo')
+    def activate_promo():
+        global user_balance, promo_used
+        code = request.args.get('code')
+
+        if code == 'DANNY777':
+            if promo_used == 0:
+                user_balance += 1000
+                promo_used = 1
+                return "PROMO OK! +1000 RUB."
+            else:
+                return "ALREADY USED!"
+        else:
+            return "WRONG CODE!"
+# Переменная для подкрутки (0 - выключена, 1 - включена)
+admin_cheat = 0
+
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_panel():
+    global user_balance, admin_cheat
+    message = ""
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+        # Проверяем секретный пароль босса
+        if password == '7777':
+            action = request.form.get('action')
+            if action == 'add_money':
+                user_balance += 50000
+                message = "💰 Успешно начислено 50 000 руб!"
+            elif action == 'toggle_cheat':
+                admin_cheat = 1 if admin_cheat == 0 else 0
+                status = "ВКЛЮЧЕНА" if admin_cheat == 1 else "ВЫКЛЮЧЕНА"
+                message = f"🎰 Подкрутка ножей теперь {status}!"
+        else:
+            message = "❌ Неверный пароль администратора!"
+
+    return render_template('admin.html', balance=user_balance, cheat=admin_cheat, message=message)
