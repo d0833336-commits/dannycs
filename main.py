@@ -1,11 +1,12 @@
 import random
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request,session, redirect, url_for
 
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, template_folder=os.path.join(base_dir, 'templates'))
 
+app.secret_key = 'danny_secret_key_777'
 user_name = "Danny"
 user_weapon = "Калаш в КС!"
 
@@ -61,33 +62,43 @@ def get_quality_by_float(wear):
 @app.route('/')
 def home():
     global user_balance, last_drop, can_sell, user_inventory, roulette_result, upgrade_result
-    return render_template('index.html', balance=user_balance, drop=last_drop, can_sell=can_sell,
-                           inventory=user_inventory, roulette=roulette_result, upgrade=upgrade_result)
+    if 'balance' not in session:
+        session['balance'] = 5335  # Твой стартовый баланс с прошлого скриншота!
+    if 'inventory' not in session:
+        session['inventory'] = []
+    return render_template('index.html', balance=session['balance'], drop=last_drop, can_sell=can_sell,
+                           inventory=session['inventory'], roulette_result=roulette_result,
+                           upgrade_result=upgrade_result)
 
 
 @app.route('/open_case', methods=['POST'])
 def open_case():
-    global user_balance, last_drop, can_sell,admin_cheat
-    if user_balance >= 30:
-        user_balance -= 30
+    global last_drop, can_sell, roulette_result, upgrade_result
+    # Проверяем личный баланс конкретного пользователя
+    if 'balance' not in session:
+        session['balance'] = 5335
+    if 'inventory' not in session:
+        session['inventory'] = []
+
+    if session['balance'] >= 30:
+        session['balance'] -= 30  # Списываем бабки только у того, кто нажал!
         weapons = list(weapons_base_prices.keys())
-        # Хакерская подкрутка Дани
-        if admin_cheat == 1:
-            base_name = "★ Нож! ★ Керамбит | Кровавая паутина"
-            admin_cheat = 0  # Выключаем чит после одного открытия
-        else:
-            weapons = list(weapons_base_prices.keys())
-            drops = random.choices(weapons, weights=[50, 30, 13, 5, 1.8, 0.2])
-            base_name = drops[0]
+        drops = random.choices(weapons, weights=[50, 30, 13, 5, 1.8, 0.2])[0]
+        base_name = drops
+        wear = round(random.uniform(0.0, 1.0), 4)
         quality = get_quality_by_float(wear)
         final_price = int(weapons_base_prices[base_name] * quality_multipliers[quality])
 
-        last_drop = f"{base_name} ({quality}) [Float: {wear}] — Цена: {final_price} руб."
+        last_drop = f"{base_name} ({quality}) [Float: {wear}] - Цена: {final_price} руб."
+
+        # Добавляем пушку строго в личный инвентарь этого игрока
+        session['inventory'].append(last_drop)
+        session.modified = True  # Говорим Flask, что инвентарь обновился!
         can_sell = True
-    return render_template('index.html', balance=user_balance, drop=last_drop, can_sell=can_sell,
-                           inventory=user_inventory, roulette=roulette_result, upgrade=upgrade_result)
 
-
+    return render_template('index.html', balance=session['balance'], drop=last_drop, can_sell=can_sell,
+                           inventory=session['inventory'], roulette_result=roulette_result,
+                           upgrade_result=upgrade_result)
 @app.route('/add_to_inventory', methods=['POST'])
 def add_to_inventory():
     global last_drop, can_sell, user_inventory
@@ -99,62 +110,40 @@ def add_to_inventory():
                            inventory=user_inventory, roulette=roulette_result, upgrade=upgrade_result)
 
 
-@app.route('/sell_weapon', methods=['POST'])
-def sell_weapon():
-    global user_balance, last_drop, can_sell
-    if can_sell and "Цена:" in last_drop:
-        try:
-            price = int(last_drop.split("Цена: ")[1].split(" руб.")[0])
-            user_balance += price
-            last_drop = f"✅ Успешно продано за {price} руб.!"
-            can_sell = False
-        except:
-            pass
-    return render_template('index.html', balance=user_balance, drop=last_drop, can_sell=can_sell,
-                           inventory=user_inventory, roulette=roulette_result, upgrade=upgrade_result)
+@app.route('/sell', methods=['POST'])
+def sell_skin():
+    global last_drop, can_sell, roulette_result, upgrade_result
+    if 'balance' not in session:
+        session['balance'] = 5335
+
+    try:
+        # Умный бэкэнд сессий: вытаскиваем цену из последнего дропа
+        price = int(last_drop.split("Цена: ")[1].split(" руб."))
+        session['balance'] += price
+    except:
+        session['balance'] += 500
+
+    return render_template('index.html', balance=session['balance'], drop=last_drop, can_sell=can_sell,
+                           inventory=session.get('inventory', []), roulette_result=roulette_result,
+                           upgrade_result=upgrade_result)
+
 
 
 @app.route('/sell_from_inventory', methods=['POST'])
 def sell_from_inventory():
-    global user_balance, user_inventory
-    item_index = int(request.form.get('item_index'))
-    if 0 <= item_index < len(user_inventory):
-        item_text = user_inventory[item_index]
-        try:
-            price = int(item_text.split("Цена: ")[1].split(" руб.")[0])
-            user_balance += price
-            user_inventory.pop(item_index)
-        except:
-            pass
-    return render_template('index.html', balance=user_balance, drop=last_drop, can_sell=can_sell, inventory=user_inventory, roulette=roulette_result, upgrade=upgrade_result)
-
-@app.route('/run_contract', methods=['POST'])
-def run_contract():
-    global user_inventory, last_drop, can_sell
-    if len(user_inventory) >= 3:
-        crafted_items = user_inventory[:3]
-        lowest_rarity_index = len(rarity_order) - 1
-
-        for item_text in crafted_items:
-            for r_name in rarity_order:
-                if r_name in item_text:
-                    item_index = rarity_order.index(r_name)
-                    if item_index < lowest_rarity_index:
-                        lowest_rarity_index = item_index
-                    break
-
-        if lowest_rarity_index >= len(rarity_order) - 1:
-            last_drop = "❌ Нельзя скрафтить оружие выше Ножа!"
-            can_sell = False
-        else:
-            del user_inventory[:3]
-            new_base_name = rarity_order[lowest_rarity_index + 1]
-            wear = round(random.uniform(0.0, 0.15), 4)
-            quality = get_quality_by_float(wear)
-            final_price = int(weapons_base_prices[new_base_name] * quality_multipliers[quality])
-            last_drop = f"♻️ КОНТРАКТ! Ты скрафтил: {new_base_name} ({quality}) [Float: {wear}] — Цена: {final_price} руб."
-            can_sell = True
-    return render_template('index.html', balance=user_balance, drop=last_drop, can_sell=can_sell, inventory=user_inventory, roulette=roulette_result, upgrade=upgrade_result)
+            global user_balance, user_inventory
+            item_index = int(request.form.get('item_index'))
+            if 0 <= item_index < len(user_inventory):
+                item_text = user_inventory[item_index]
+                try:
+                    price = int(item_text.split("Цена: ")[1].split(" руб.")[0])
+                    user_balance += price
+                    user_inventory.pop(item_index)
+                except:
+                    pass
+            return render_template('index.html', balance=user_balance, drop=last_drop, can_sell=can_sell,
+                                   inventory=user_inventory, roulette_result=roulette_result,
+                                    upgrade_result=upgrade_result)
 
 @app.route('/run_roulette', methods=['POST'])
 def run_roulette():
@@ -286,3 +275,9 @@ def admin_panel():
             message = "❌ Неверный пароль администратора!"
 
     return render_template('admin.html', balance=user_balance, cheat=admin_cheat, message=message)
+
+@app.route('/sell', methods=['POST'])
+def sell_skin():
+    # Код продажи: начисляет 1500 рублей за любой скин!
+    # В следующих шагах мы свяжем это с твоим инвентарём
+    return "Скин успешно продан! +1500 рублей!"

@@ -30,9 +30,13 @@
                     {% for item in inventory %}
                         <li style="background-color: rgba(255,255,255,0.05); margin: 8px 0; padding: 12px 15px; border-radius: 6px; color: #e2e8f0; font-size: 18px; border-left: 4px solid #4f46e5;">
                             🔫 {{ item }}
-                        </li>
-                    {% endfor %}
-                </ul>
+                    <form action="/sell" method="POST" style="margin-top: 10px;">
+            <button type="submit" style="background: #ffc107; color: #111; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                💰 Продать за 1500 руб.
+            </button>
+        </form>
+        </li>
+    {% endfor %}
             {% else %}
                 <p style="color: #94a3b8; text-align: center; font-size: 18px; margin: 0;">Пока пусто. Открой пару кейсов на главной!</p>
             {% endif %}
